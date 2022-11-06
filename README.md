@@ -42,7 +42,7 @@ diff -ur procServ-2.7.0/procServ.cc procServ-2.7.0-patched/procServ.cc
 ## Example IOC startup
 
 ```bash
-dbLoadDatabase "dbd/autoProcServControl.dbd"
+dbLoadDatabase "dbd/example.dbd"
 drvAsynIPPortConfigure("IOC1port", "localhost:7001", 100, 0, 0)
 dbLoadRecords "${PROCSERVCONTROL}/db/procServControl.template", "P=PV_PREFIX, PORT=IOC1port"
 seq(procServControl, "P=PV_PREFIX")

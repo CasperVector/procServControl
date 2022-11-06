@@ -2,8 +2,8 @@ TOP = .
 include $(TOP)/configure/CONFIG
 
 DIRS += configure
-DIRS += autoProcServControlApp/src
-DIRS += iocBoot/iocautoProcServControl
+DIRS += exampleApp/src
+DIRS += iocBoot/iocexample
 
 include $(TOP)/configure/RULES_TOP
 

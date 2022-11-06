@@ -6,7 +6,7 @@ INIT_ROOT=/dls_sw/prod/etc/init
 source $INIT_ROOT/functions
 SOFTIOCS=$(GetConfigDir $INIT_ROOT)/soft-iocs
 REALIOCS=$(GetConfigDir $INIT_ROOT)/real-iocs
-ST_FILE="/tmp/stautoProcServControl.cmd"
+ST_FILE="/tmp/stexample.cmd"
 ASYN_DB_FILE="/tmp/asyndb.cmd"
 SEQ_FILE="/tmp/seq.cmd"
 TOP=$(cd ../..; pwd)
@@ -16,8 +16,8 @@ PROCSERVCONTROL=$(cd ../../../..; pwd)
 cat <<EOF > $ASYN_DB_FILE
 cd $TOP
 epicsEnvSet "EPICS_TS_MIN_WEST", '0'
-dbLoadDatabase "dbd/autoProcServControl.dbd"
-autoProcServControl_registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase "dbd/example.dbd"
+example_registerRecordDeviceDriver(pdbbase)
 EOF
 
 # IocInit
@@ -28,7 +28,7 @@ EOF
 sed '/^#/d;/^\s*$/d' "$SOFTIOCS" | (
     while read IOC PORT IOCARGS; do
         # Make asyn ports and database bits
-        if [ "$IOC" != "autoProcServControl" ]; then
+        if [ "$IOC" != "example" ]; then
             cat <<EOF >> $ASYN_DB_FILE
 drvAsynIPPortConfigure("${IOC}port", "localhost:${PORT}", 100, 0, 0)
 dbLoadRecords "${PROCSERVCONTROL}/db/procServControl.template", "P=${IOC},PORT=${IOC}port"
@@ -82,4 +82,4 @@ fi
 cat $ASYN_DB_FILE $SEQ_FILE > $ST_FILE
 
 # Now start the IOC
-exec ./autoProcServControl $ST_FILE
+exec ./example $ST_FILE
