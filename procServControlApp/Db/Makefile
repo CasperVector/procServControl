@@ -12,7 +12,6 @@ include $(TOP)/configure/CONFIG
 # templates like this
 #
 DB += procServControl.template
-DB += procServControlGui.template
 
 #----------------------------------------------------
 # In a Diamond IOC Application, build db files from
