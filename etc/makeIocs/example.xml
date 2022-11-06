@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<components arch="linux-x86_64">
-	<asyn.AsynIP name="port1" port="localhost:7001"/>
-	<asyn.AsynIP name="port2" port="localhost:7002"/>
-</components>
