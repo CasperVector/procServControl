@@ -2,7 +2,6 @@ ASYN=$(SUPPORT)/asyn/master
 BUSY=$(SUPPORT)/busy/master
 PROCSERVCONTROL=$(SUPPORT)/procServControl/master
 SNCSEQ=$(SUPPORT)/seq/master
-ONCRPC=$(SUPPORT)/oncrpc/master
 
 # optional extra local definitions here
 -include $(TOP)/configure/RELEASE.private

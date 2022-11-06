@@ -1,9 +1,12 @@
-ASYN=$(SUPPORT)/asyn/master
-SNCSEQ=$(SUPPORT)/seq/master
-ONCRPC=$(SUPPORT)/oncrpc/master
+SUPPORT=/dls_sw/prod/R3.14.12.7/support
 
-# optional extra local definitions here
--include $(TOP)/configure/RELEASE.private
+SNCSEQ=$(SUPPORT)/seq/2-2-5dls1
+ASYN=$(SUPPORT)/asyn/4-41
+BUSY=$(SUPPORT)/busy/1-7-2dls5
 
-include $(TOP)/../../../ISIS_CONFIG
--include $(TOP)/../../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
+EPICS_BASE=/dls_sw/epics/R3.14.12.7/base
+
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local
+
