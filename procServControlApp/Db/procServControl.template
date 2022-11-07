@@ -2,35 +2,22 @@
 # % macro, PORT, Asyn port name
 # % macro, SHOWOUT, Set this to 0 to disable the IOC output display
 # % macro, MANUALSTART, Set this to # if the IOC is manually started. This changes the severity of STATUS
-# % macro, name, Object and gui association name
-# % gui, $(name=), edm, procServControl.edl, procServ=$(P)
-# # \file
-# # This template allows monitoring of an IOC running through procServ in
-# # EPICS. It should be run in a separate IOC, but needs to be running on the
-# # same machine as procServ as procServ only allows localhost access
-# # \image html procServ.png "Gui snapshot"
-
-# This associates BOY screens with the template
-# Note this refers to the OPI for HW status in BLGui which uses
-# PVs from procserv and deviocstats
-# % gui, $(name=), boycomponent, procServControlApp_opi/procServControl.opi, P=$(P), name=$(name=)
+# % macro, DESCRIPTION, User-friendly description
 
 record(stringin, "$(P):IOCNAME") {
   field(DESC, "IOC Name")
-  info(autosaveFields, "VAL")
 }
 
-record(stringin, "$(P):IOCDESC") {
-  field(DESC, "IOC Description")
-  info(autosaveFields, "VAL")
+record(stringin, "$(P):DESCRIPTION") {
+  field(DESC, "User-friendly description")
+  field(PINI, "YES")
+  field(VAL, "$(DESCRIPTION=$(P))")
 }
 
-#% archiver 10 Monitor
 record(bi, "$(P):AUTORESTART") {
   field(DESC, "Autorestart readback")
   field(ZNAM, "Off")
   field(ONAM, "On")
-  info(archive, "VAL")
 }
 
 record(bo, "$(P):SHOWOUT") {
@@ -41,11 +28,6 @@ record(bo, "$(P):SHOWOUT") {
   field(PINI, "YES")
 }
 
-
-#% archiver 10 Monitor
-# %gdatag,template,simpleMbbinary,$(P),Current status for IOC $(P)
-# %gdatag,mbbinary,ro,$(P),RECORD,PV
-# % gui, $(name=), sevr
 record(mbbi, "$(P):STATUS") {
   field(DESC, "Process status")
   field(ZRST, "Running")
@@ -59,31 +41,22 @@ $(MANUALSTART=)  field(ONSV, "MAJOR")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")  
-  info(archive, "VAL")
 }
 
-#% archiver 10 Monitor
 record(busy, "$(P):TOGGLE") {
   field(DESC, "Autorestart toggle")
-  info(archive, "VAL")
 }
 
-#% archiver 10 Monitor
 record(busy, "$(P):START") {
   field(DESC, "Start IOC")
-  info(archive, "VAL")
 }
 
-#% archiver 10 Monitor
 record(busy, "$(P):STOP") {
   field(DESC, "Stop IOC")
-  info(archive, "VAL")
 }
 
-#% archiver 10 Monitor
 record(busy, "$(P):RESTART") {
   field(DESC, "Restart IOC")
-  info(archive, "VAL")
 }
 
 record(waveform, "$(P):IOCOUT") {
@@ -95,19 +68,6 @@ record(waveform, "$(P):IOCOUT") {
 record(stringin, "$(P):PORT") {
   field(DESC, "conserver/procServ IOC name")
   field(VAL, "$(PORT)")
-  field(PINI, "YES")
-}
-
-
-record(longin, "$(P):CONPORT") {
-  field(DESC, "procServ IOC console port number")
-  field(VAL, "$(CONPORT)")
-  field(PINI, "YES")
-}
-
-record(longin, "$(P):LOGPORT") {
-  field(DESC, "procServ IOC log port number")
-  field(VAL, "$(LOGPORT)")
   field(PINI, "YES")
 }
 
