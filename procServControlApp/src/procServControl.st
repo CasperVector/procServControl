@@ -20,24 +20,24 @@ option +r;
 #define NELM 5120
 
 /* Inputs */
-string port;            assign port            to "{P}:PORT";
-int showout;            assign showout        to "{P}:SHOWOUT.VAL"; monitor showout;
+string port;            assign port            to "{P}PORT";
+int showout;            assign showout        to "{P}SHOWOUT.VAL"; monitor showout;
 
 /* Outputs */
-string iocname;            assign iocname        to "{P}:IOCNAME";
-int autorestart;        assign autorestart    to "{P}:AUTORESTART";
-int status;                assign status        to "{P}:STATUS";
+string iocname;            assign iocname        to "{P}IOCNAME";
+int autorestart;        assign autorestart    to "{P}AUTORESTART";
+int status;                assign status        to "{P}STATUS";
 #define RUNNING 0
 #define SHUTDOWN 1
 #define PROCSERVSTOPPED 2
 #define INVALIDPORTNAME 3
-char iocout[NELM];        assign iocout        to "{P}:IOCOUT";
+char iocout[NELM];        assign iocout        to "{P}IOCOUT";
 
 /* Commands */
-int start;                assign start         to "{P}:START";
-int stop;                assign stop         to "{P}:STOP";
-int restart;            assign restart         to "{P}:RESTART";
-int toggle;                assign toggle         to "{P}:TOGGLE";
+int start;                assign start         to "{P}START";
+int stop;                assign stop         to "{P}STOP";
+int restart;            assign restart         to "{P}RESTART";
+int toggle;                assign toggle         to "{P}TOGGLE";
 
 /* Flags */
 monitor start;            evflag startMon;    sync start startMon;

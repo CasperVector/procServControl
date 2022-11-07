@@ -115,7 +115,7 @@ fgColor index 14
 bgColor index 0
 topShadowColor index 0
 botShadowColor index 14
-controlPv "$(CS):CSTYPE"
+controlPv "$(CS)CSTYPE"
 font "arial-medium-r-18.0"
 numItems 2
 symbolTag {
@@ -182,7 +182,7 @@ x 415
 y 55
 w 70
 h 25
-controlPv "$(procServ):AUTORESTART"
+controlPv "$(procServ)AUTORESTART"
 fgColor index 16
 fgAlarm
 bgColor index 10
@@ -200,7 +200,7 @@ x 90
 y 55
 w 220
 h 25
-controlPv "$(procServ):IOCNAME"
+controlPv "$(procServ)IOCNAME"
 fgColor index 16
 fgAlarm
 bgColor index 10
@@ -244,15 +244,15 @@ offColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(procServ):TOGGLE"
-indicatorPv "$(procServ):TOGGLE"
+controlPv "$(procServ)TOGGLE"
+indicatorPv "$(procServ)TOGGLE"
 onLabel "Toggle"
 offLabel "Toggle"
 labelType "literal"
 3d
 font "arial-bold-r-14.0"
 objType "controls"
-visPv "$(procServ):STATUS"
+visPv "$(procServ)STATUS"
 visMin "0"
 visMax "1"
 endObjectProperties
@@ -287,7 +287,7 @@ x 90
 y 85
 w 220
 h 25
-controlPv "$(procServ):STATUS"
+controlPv "$(procServ)STATUS"
 fgColor index 16
 fgAlarm
 bgColor index 10
@@ -311,14 +311,14 @@ offColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(procServ):START"
+controlPv "$(procServ)START"
 onLabel "Start"
 offLabel "Start"
 labelType "literal"
 3d
 font "arial-bold-r-14.0"
 objType "controls"
-visPv "$(procServ):STATUS"
+visPv "$(procServ)STATUS"
 visMin "1"
 visMax "2"
 endObjectProperties
@@ -339,14 +339,14 @@ offColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(procServ):RESTART"
+controlPv "$(procServ)RESTART"
 onLabel "Restart"
 offLabel "Restart"
 labelType "literal"
 3d
 font "arial-bold-r-14.0"
 objType "controls"
-visPv "$(procServ):STATUS"
+visPv "$(procServ)STATUS"
 visMin "0"
 visMax "1"
 endObjectProperties
@@ -367,14 +367,14 @@ offColor index 3
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(procServ):STOP"
+controlPv "$(procServ)STOP"
 onLabel "Stop"
 offLabel "Stop"
 labelType "literal"
 3d
 font "arial-bold-r-14.0"
 objType "controls"
-visPv "$(procServ):STATUS"
+visPv "$(procServ)STATUS"
 visMin "0"
 visMax "1"
 endObjectProperties
@@ -389,7 +389,7 @@ x 10
 y 115
 w 710
 h 365
-controlPv "$(procServ):IOCOUT"
+controlPv "$(procServ)IOCOUT"
 fgColour index 16
 fgAlarm
 bgColour index 10
@@ -413,7 +413,7 @@ selectColor index 4
 inconsistentColor index 0
 topShadowColor index 1
 botShadowColor index 11
-controlPv "$(procServ):SHOWOUT"
+controlPv "$(procServ)SHOWOUT"
 font "arial-bold-r-14.0"
 orientation "horizontal"
 endObjectProperties
@@ -519,7 +519,7 @@ x 167
 y 3
 w 520
 h 24
-controlPv "$(procServ):DESCRIPTION"
+controlPv "$(procServ)DESC"
 fgColor index 14
 fgAlarm
 bgColor index 48
