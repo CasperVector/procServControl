@@ -3,7 +3,12 @@ program procServControl("P=P")
 %% #include <stdio.h>
 %% #include <stdlib.h>
 %% #include <string.h>
+#ifdef _WIN32
+%% #include <windows.h>
+%% #include <process.h>
+#else
 %% #include <unistd.h>
+#endif /* ifdef _WIN32 */
 option +r;
 
 /* This defines the number of lines and max line length */
@@ -39,6 +44,7 @@ monitor start;            evflag startMon;    sync start startMon;
 monitor stop;            evflag stopMon;        sync stop stopMon;
 monitor restart;        evflag restartMon;    sync restart restartMon;
 monitor toggle;            evflag toggleMon;    sync toggle toggleMon;
+monitor status;            evflag statusMon;    sync status statusMon;
 
 /* Internal variables for storing output lines*/
 char iocLine[NLINES][LINELENGTH];
@@ -52,7 +58,13 @@ int lastcommand;
 
 /* These are needed to tie up the ppasynUser with the state machine */
 int stateIndex;
-#define NSTATEMACHINES 256
+
+/* we define two ports per ioc in build_ioc_startup, between ports 20000 and 49152
+ * (port 49152 is start of IANA dynamic range for port allocation)
+ * Therefore we can have at most ((49152 - 20000)/2) (=14576) iocs assuming all ports are free
+ * Set max state machines at 10,000 to leave some room for ports which are in use.
+ */
+#define NSTATEMACHINES 10000
 %% static int stateIndexGlobal = 0;
 
 /* C functions and asyn things */
@@ -73,6 +85,7 @@ ss ssUserInput {
             efClear(stopMon);
             efClear(restartMon);
             efClear(toggleMon);
+            efClear(statusMon);
         } state MONITORINPUTS
     }
 
@@ -87,8 +100,9 @@ ss ssUserInput {
                 %% writeControlChar(pVar, "\x18");
             }
             start = 0;
-            pvPut(start, SYNC);
-        } state MONITORINPUTS
+            pvPut(start); /* not using SYNC as Busy record */
+            efSet(statusMon); /* to avoid timeout if start when running */
+        } state WAITFORRUNNING
 
         when(efTestAndClear(stopMon) && (stop == 1)) {
             /* If we are running, then make sure autorestart is off, if it isn't
@@ -96,12 +110,15 @@ ss ssUserInput {
             if (status == RUNNING) {
                 if (autorestart == 1) {
                     %% writeControlChar(pVar, "\x14");
+                    autorestart = 0;
+                    pvPut(autorestart, SYNC);
                 }
                 %% writeControlChar(pVar, "\x18");
             }
             stop = 0;
-            pvPut(stop, SYNC);
-        } state MONITORINPUTS
+            pvPut(stop);  /* not using SYNC as Busy record */
+            efSet(statusMon); /* to avoid timeout if stop when stopped */
+        } state WAITFORSHUTDOWN
 
         when(efTestAndClear(restartMon) && (restart == 1)) {
             /* If we are running, then make sure autorestart is on, if it isn't
@@ -109,12 +126,15 @@ ss ssUserInput {
             if (status == RUNNING) {
                 if (autorestart == 0) {
                     %% writeControlChar(pVar, "\x14");
+                    autorestart = 1;
+                    pvPut(autorestart, SYNC);
                 }
                 %% writeControlChar(pVar, "\x18");
             }
             restart = 0;
-            pvPut(restart, SYNC);
-        } state MONITORINPUTS
+            pvPut(restart);  /* not using SYNC as Busy record */
+            efSet(statusMon); /* to avoid potential timeout error */
+        } state WAITFORRESTART
 
         when(efTestAndClear(toggleMon) && (toggle == 1)) {
             /* If we are running, then send CTRL-T to toggle autorestart */
@@ -122,7 +142,45 @@ ss ssUserInput {
                 %% writeControlChar(pVar, "\x14");
             }
             toggle = 0;
-            pvPut(toggle, SYNC);
+            pvPut(toggle);  /* not using SYNC as Busy record */
+        } state MONITORINPUTS
+    }
+    
+    state WAITFORSHUTDOWN {
+        entry {
+        }
+        
+        when(efTestAndClear(statusMon) && (status == SHUTDOWN)) {
+        } state MONITORINPUTS
+
+        when(delay(5.0)) {
+            printf("Timeout waiting for SHUTDOWN of %s\n", macValueGet("P"));
+        } state MONITORINPUTS
+    }
+
+    state WAITFORRESTART {
+        entry {
+        }
+        
+        when(efTestAndClear(statusMon) && (status == SHUTDOWN)) {
+        } state WAITFORRUNNING
+
+        when(delay(5.0)) {
+            printf("Timeout waiting for RESTART of %s\n", macValueGet("P"));
+        } state MONITORINPUTS
+    }
+
+    state WAITFORRUNNING {
+        entry {
+        }
+        
+        when(efTestAndClear(statusMon) && (status == RUNNING)) {
+        } state MONITORINPUTS
+
+        /* need a long timeout here as tests with sending lots of consecutive
+           commands seemed to require this */
+        when(delay(30.0)) {
+            printf("Timeout waiting for RUNNING of %s\n", macValueGet("P"));
         } state MONITORINPUTS
     }
 }
@@ -181,9 +239,20 @@ ss ssProcServInput {
 
 /* C functions */
 %{
+
+static void do_sleep(float secs)
+{
+#ifdef _WIN32
+    Sleep((int)(1000 * secs));
+#else
+    sleep(secs);
+#endif /* ifdef _WIN32 */
+}
+
 /* Create an asynUser and set it up using the port name */
 static void createAsynUser(struct UserVar *pVar) {
     int i;
+    asynUser *pasynUser = NULL;
     /* Increment the global state machine counter */
     pVar->stateIndex = stateIndexGlobal++;
     if (stateIndexGlobal > NSTATEMACHINES) {
@@ -191,7 +260,6 @@ static void createAsynUser(struct UserVar *pVar) {
         return;
     }
     /* Connect the port */
-    asynUser *pasynUser = NULL;
     if (pasynOctetSyncIO->connect(pVar->port, 0, &pasynUser, NULL)) {
         /* Invalid port name, can't recover from this */
         printf("***Error: can't connect to asyn port name %s\n", pVar->port);
@@ -212,20 +280,21 @@ static void createAsynUser(struct UserVar *pVar) {
 static void getNextLine(struct UserVar *pVar) {
     char buffer[LINELENGTH];
     char temp[LINELENGTH];
-    size_t bytes;
+    size_t bytes = 0;
     int eomReason;
     int i, index, yesNo;
+    asynUser *pasynUser;
 
     /* By default there is nothing to do on return */
     pVar->lastcommand = NONE;
 
     /* Check that asynUser exists */
     if (pVar->stateIndex >= NSTATEMACHINES) return;
-    asynUser *pasynUser = pasynUsers[pVar->stateIndex];
+    pasynUser = pasynUsers[pVar->stateIndex];
     if (pasynUser == NULL) {
         if (pVar->status == INVALIDPORTNAME) {
             /* we can never recover, but at least we won't use all the CPU... */
-            sleep(1);
+            do_sleep(1);
         } else {
             pVar->lastcommand = STATUS;
             pVar->status = INVALIDPORTNAME;
@@ -238,7 +307,7 @@ static void getNextLine(struct UserVar *pVar) {
     
     if (yesNo == 0) {
         if (pVar->status == PROCSERVSTOPPED) {
-            sleep(1);
+            do_sleep(1);
         } else {
             pVar->status = PROCSERVSTOPPED;
             pVar->lastcommand = STATUS;
@@ -254,13 +323,16 @@ static void getNextLine(struct UserVar *pVar) {
         pVar->status = SHUTDOWN;
     }
 
+    /* zero buffer, guarantees termination if we only read LINELENGTH-1 chars */
+    memset(buffer, 0, LINELENGTH);
+
     /* read from the asyn port, if we fail (no data) just return */
-    if (pasynOctetSyncIO->read(pasynUser, buffer, LINELENGTH, 0.1, &bytes, &eomReason)) {
+    if ( pasynOctetSyncIO->read(pasynUser, buffer, LINELENGTH-1, 0.1, &bytes, &eomReason) || (bytes == 0) ) {
+        do_sleep(0.1f);
         return;
     }
 
-    /* NULL terminate the buffer and put it in the right place */
-    buffer[LINELENGTH-1] = '\0';
+    /* put buffer in the right place */
     strcpy(pVar->iocLine[pVar->iocLineI], buffer);
     pVar->iocLineI = (pVar->iocLineI + 1) % NLINES;
 
@@ -275,6 +347,10 @@ static void getNextLine(struct UserVar *pVar) {
             bytes += strlen(pVar->iocLine[index]);
             /* Join with a \n */
             sprintf(pVar->iocout + bytes++, "\n");
+        }
+        /* zero out rest of array so we do not get any leftovers displayed */
+        if ( bytes < sizeof(pVar->iocout) ) {
+              memset(pVar->iocout + bytes, 0, sizeof(pVar->iocout) - bytes);
         }
         pVar->lastcommand = IOCOUT;
     }
@@ -343,10 +419,11 @@ static void getNextLine(struct UserVar *pVar) {
 static void writeControlChar(struct UserVar *pVar, const char *controlChar) {
     size_t bytes;
     int yesNo;
+    asynUser *pasynUser;
 
     /* Check that asynUser exists */
     if (pVar->stateIndex >= NSTATEMACHINES) return;
-    asynUser *pasynUser = pasynUsers[pVar->stateIndex];
+    pasynUser = pasynUsers[pVar->stateIndex];
     if (pasynUser == NULL) return;
 
     /* Check asynUser is connected */
